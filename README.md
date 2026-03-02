@@ -43,9 +43,6 @@ Topics covered:
 - BLE Client / Server Implementation
 - Data Transmission Workflow
 
-Watch here:  
-https://www.youtube.com/live/ZTCBuNpIYNM
-
 ---
 
 ## 🚀 Practical Projects
