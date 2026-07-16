@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>教室座位抽籤</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div>
+        <p class="eyebrow">CLASSROOM TOOL</p>
+        <h1>教室座位抽籤</h1>
+        <p class="subtitle">指定部分座位，其餘座號隨機安排</p>
+      </div>
+      <div id="savedAt" class="saved-at">尚未產生座位表</div>
+    </header>
+
+    <div id="overlayBackdrop" class="overlay-backdrop" hidden></div>
+
+    <section class="panel floating-panel" id="setupPanel" hidden>
+      <div class="panel-title">
+        <h2>座位設定</h2>
+        <button id="closeSetup" class="icon-button" type="button" title="關閉">✕</button>
+      </div>
+      <div class="setup">
+        <div class="field"><label for="columns">排數</label><input id="columns" type="number" min="1" max="20" value="7"></div>
+        <div class="field"><label for="rows">每排座位數</label><input id="rows" type="number" min="1" max="20" value="6"></div>
+        <div class="field"><label for="startNumber">開始號碼</label><input id="startNumber" type="number" min="1" value="1"></div>
+        <div class="field"><label for="studentCount">學生人數</label><input id="studentCount" type="number" min="0" value="40"></div>
+        <button id="applyConfig" class="secondary">產生座號</button>
+        <button id="clearStudents" class="secondary">清除學生資料</button>
+        <span id="setupMessage" class="message" role="status"></span>
+      </div>
+      <div class="setup-divider"></div>
+      <h3 class="setup-subtitle">列印資訊（選填，用於輸出 PDF／列印）</h3>
+      <div class="setup-meta">
+        <div class="field wide"><label for="metaSchool">學校</label><input id="metaSchool" type="text" placeholder="例：臺北市立◯◯高級中學"></div>
+        <div class="field"><label for="metaYear">學年度</label><input id="metaYear" type="text" inputmode="numeric" maxlength="3" placeholder="例：115"></div>
+        <div class="field"><label for="metaSemester">學期</label>
+          <select id="metaSemester"><option value="上">上學期</option><option value="下">下學期</option></select>
+        </div>
+        <div class="field"><label for="metaClass">班級</label><input id="metaClass" type="text" placeholder="例：201"></div>
+        <div class="field wide"><label for="metaTeacher">導師</label><input id="metaTeacher" type="text" placeholder="導師姓名"></div>
+      </div>
+      <div class="setup-divider"></div>
+      <h3 class="setup-subtitle">班級幹部（選填，從學生名單選擇，用於輸出 PDF／列印）</h3>
+      <div id="cadreFields" class="setup-cadres"></div>
+    </section>
+
+    <section class="panel roster-panel floating-panel" id="rosterPanel" hidden>
+      <div class="panel-title">
+        <h2>匯入學生名單</h2>
+        <div class="title-actions">
+          <span class="hint-inline">一行一位，格式：座號 姓名</span>
+          <button id="closeRoster" class="icon-button" type="button" title="關閉">✕</button>
+        </div>
+      </div>
+      <p class="hint">貼上座號與姓名，可用空白、逗號或 Tab 分隔；其餘欄位會忽略。建立後會依座號排序，並取代目前的座號清單與座位安排。</p>
+      <textarea id="rosterInput" class="roster-input" placeholder="1 王小明&#10;2 陳小華&#10;3 林大同"></textarea>
+      <div class="tool-row">
+        <button id="importRoster" class="primary">建立學生名單</button>
+        <span id="rosterMessage" class="message" role="status"></span>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <aside class="panel sidebar">
+        <div class="panel-title">
+          <h2>學生名單</h2>
+          <div class="title-actions">
+            <span id="remaining">未安排 0 人</span>
+            <button id="toggleRoster" class="icon-button" type="button" title="匯入學生名單" aria-expanded="false" aria-controls="rosterPanel">+</button>
+          </div>
+        </div>
+        <p class="hint">先選座號，再點選座位即可指定。指定的座位會保留；點擊座號旁的 × 可移除。</p>
+        <div id="studentList" class="student-list"></div>
+      </aside>
+
+      <section class="panel seating-panel">
+        <div class="panel-title seating-title">
+          <h2>座位表</h2>
+          <span class="front-label">講台／前方</span>
+          <button id="toggleSetup" class="icon-button" type="button" title="座位設定" aria-expanded="false" aria-controls="setupPanel">⚙</button>
+        </div>
+        <div id="seatGrid" class="seat-grid"></div>
+        <p id="seatGridEmpty" class="hint seat-grid-empty" hidden>尚未建立座位表。按右上角「＋」匯入學生名單，或按「⚙」設定排數與座位數後按「產生座號」。</p>
+        <p class="legend"><span class="dot assigned"></span>指定／已安排 <span class="dot empty"></span>空位 <span class="dot open"></span>未安排</p>
+        <div class="tool-row">
+          <button id="emptyMode" class="secondary">設定空位</button>
+          <button id="clearSelection" class="text-button">取消選取</button>
+        </div>
+        <div class="actions">
+          <button id="randomize" class="primary">重新抽選</button>
+          <button id="clearAll" class="danger">清除全部安排</button>
+        </div>
+        <div id="message" class="message" role="status"></div>
+      </section>
+    </section>
+
+    <section class="panel history-panel">
+      <div class="panel-title">
+        <h2>本機保存紀錄</h2>
+        <div class="title-actions history-actions">
+          <button id="printChart" class="primary">列印／輸出 PDF</button>
+          <button id="exportJson" class="secondary">匯出完整資料</button>
+          <button id="importJsonBtn" class="secondary">匯入完整資料</button>
+          <input id="importJsonFile" type="file" accept="application/json" hidden>
+        </div>
+      </div>
+      <div id="history" class="history-empty">產生座位表後，結果會保存在這台裝置的瀏覽器。</div>
+    </section>
+  </main>
+
+  <div id="printView" class="print-view">
+    <div class="print-header">
+      <div class="print-title-line"><span id="printSchoolText"></span>　<span id="printYearText"></span>學年度<span id="printSemesterText"></span>學期　<span id="printClassText"></span>班座次表</div>
+      <div class="print-teacher-line">導師姓名：<span id="printTeacherText"></span></div>
+    </div>
+    <div class="print-body">
+      <div id="printRosterWrap" class="print-roster">
+        <table id="printRosterTable" class="print-roster-table"></table>
+      </div>
+      <div class="print-seat-wrap">
+        <div id="printCadreWrap" class="print-cadre-wrap" hidden>
+          <table id="printCadreTable" class="print-cadre-table"></table>
+        </div>
+        <div id="printSeatGrid" class="print-seat-grid"></div>
+        <div class="print-footer-row">
+          <div class="print-podium">講　台</div>
+          <div class="print-date" id="printDateText"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
