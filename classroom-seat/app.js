@@ -1,17 +1,34 @@
 const STORAGE_KEY = 'classroom-seat-v2';
 const $ = id => document.getElementById(id);
-let state = { rows:6, columns:7, students:[], seats:[], fixed:[], empty:[], history:[], meta:{school:'',year:'',semester:'上',className:'',teacher:''}, cadres:{}, selected:null, emptyMode:false };
-const CADRE_TITLES=[
-  ['班長','學藝股長','風紀股長','衛生股長','康樂股長','總務股長','資源股長','資訊股長','春暉股長'],
-  ['副班長','學藝幹事','風紀幹事','衛生幹事','康樂幹事','總務幹事','資源幹事','資訊幹事','小張老師']
+// Cadre titles are user-editable: each inner array becomes one title row (plus its value
+// row) in the printed table, so the shape of the printed table follows this data.
+const DEFAULT_CADRE_TITLES=[
+  ['班長','學藝股長','風紀股長','衛生股長','體育股長','總務股長','資源股長','資訊股長','春暉股長'],
+  ['副班長','學藝幹事','風紀幹事','衛生幹事','體育幹事','總務幹事','資源幹事','資訊幹事','小張老師']
 ];
+const cloneCadreTitles=rows=>rows.map(row=>[...row]);
+let state = { rows:6, columns:7, students:[], seats:[], fixed:[], empty:[], history:[], meta:{school:'',year:'',semester:'上',className:'',teacher:''}, cadres:{}, cadreTitles:cloneCadreTitles(DEFAULT_CADRE_TITLES), selected:null, emptyMode:false };
+// Titles are stored trimmed; empty strings are kept mid-row so a row can have a blank slot,
+// but trailing blanks and all-blank rows are dropped.
+function normalizeCadreTitles(rows) {
+  if (!Array.isArray(rows)) return cloneCadreTitles(DEFAULT_CADRE_TITLES);
+  const cleaned=rows
+    .filter(Array.isArray)
+    .map(row=>{ const titles=row.map(t=>typeof t==='string'?t.trim():''); while(titles.length && !titles[titles.length-1]) titles.pop(); return titles; })
+    .filter(row=>row.length);
+  return cleaned.length?cleaned:cloneCadreTitles(DEFAULT_CADRE_TITLES);
+}
+function parseCadreTitles(text) { return normalizeCadreTitles(text.split(/\r?\n/).map(line=>line.split(/[,，\t]/))); }
+function cadreTitlesToText(rows) { return rows.map(row=>row.join('，')).join('\n'); }
+function cadreTitleList() { return state.cadreTitles.flat().filter(Boolean); }
 let dragSource=null; let dragMoved=false; let suppressClick=false;
 
 function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify({...state, selected:null, emptyMode:false})); }
-function load() { try { const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)); if (saved) state={...state,...saved,selected:null,emptyMode:false}; } catch {} }
+function load() { try { const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)); if (saved) state={...state,...saved,cadreTitles:normalizeCadreTitles(saved.cadreTitles),selected:null,emptyMode:false}; } catch {} }
 function showMessage(text='') { $('message').textContent=text; }
 function showRosterMessage(text='') { $('rosterMessage').textContent=text; }
 function showSetupMessage(text='') { $('setupMessage').textContent=text; }
+function showCadreTitlesMessage(text='') { $('cadreTitlesMessage').textContent=text; }
 function studentByNo(no) { return state.students.find(s=>s.no===no); }
 function escapeHtml(text) { return text.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function applyConfig() {
@@ -62,7 +79,7 @@ function render() {
 }
 function renderCadreSelects() {
   const box=$('cadreFields'); box.innerHTML='';
-  CADRE_TITLES.flat().forEach(title=>{
+  cadreTitleList().forEach(title=>{
     const field=document.createElement('div'); field.className='field';
     const label=document.createElement('label'); label.textContent=title;
     const select=document.createElement('select');
@@ -130,9 +147,10 @@ function importJSONFile(event){
       fixed:Array.isArray(data.fixed)?data.fixed:[], empty:Array.isArray(data.empty)?data.empty:[], history:Array.isArray(data.history)?data.history:[],
       meta:{school:'',year:'',semester:'上',className:'',teacher:'',...(data.meta||{})},
       cadres:(data.cadres && typeof data.cadres==='object' && !Array.isArray(data.cadres))?data.cadres:{},
+      cadreTitles:normalizeCadreTitles(data.cadreTitles),
       selected:null, emptyMode:false
     };
-    save(); showMessage('已匯入完整資料。'); render();
+    save(); syncCadreTitlesInput(); showMessage('已匯入完整資料。'); render();
   };
   reader.readAsText(file);
 }
@@ -145,19 +163,21 @@ function populatePrintView() {
   // Cadre table mirrors the paper template: title row + blank/name row, twice; the
   // teacher's name sits in the last header cell of the second title row (per template).
   const cadreTable=$('printCadreTable');
-  const hasCadres=CADRE_TITLES.flat().some(t=>state.cadres[t] && studentByNo(state.cadres[t]));
+  const hasCadres=cadreTitleList().some(t=>state.cadres[t] && studentByNo(state.cadres[t]));
   $('printCadreWrap').hidden=!hasCadres;
   if (hasCadres) {
     // Value cells are split into a narrow seat-no sub-column + name column (real table
     // columns, headers span both via colspan=2), matching the paper template.
-    const cadreCells=t=>{ const s=studentByNo(state.cadres[t]); return `<td class="print-cadre-no">${s?s.no:''}</td><td class="print-cadre-name">${s?escapeHtml(s.name||''):''}</td>`; };
-    const [row1,row2]=CADRE_TITLES;
+    const cadreCells=t=>{ const s=t?studentByNo(state.cadres[t]):null; return `<td class="print-cadre-no">${s?s.no:''}</td><td class="print-cadre-name">${s?escapeHtml(s.name||''):''}</td>`; };
+    // Rows can differ in length; short rows are padded so every row spans the same columns.
+    const width=Math.max(...state.cadreTitles.map(row=>row.length));
+    const padded=state.cadreTitles.map(row=>[...row,...Array(width-row.length).fill('')]);
     cadreTable.innerHTML=
-      `<colgroup>${'<col class="print-cadre-col-no"><col>'.repeat(9)}</colgroup>`+
-      `<tr>${row1.map(t=>`<th colspan="2">${t}</th>`).join('')}</tr>`+
-      `<tr>${row1.map(cadreCells).join('')}</tr>`+
-      `<tr>${row2.map(t=>`<th colspan="2">${t}</th>`).join('')}</tr>`+
-      `<tr>${row2.map(cadreCells).join('')}</tr>`;
+      `<colgroup>${'<col class="print-cadre-col-no"><col>'.repeat(width)}</colgroup>`+
+      padded.map(row=>
+        `<tr>${row.map(t=>`<th colspan="2">${escapeHtml(t)}</th>`).join('')}</tr>`+
+        `<tr>${row.map(cadreCells).join('')}</tr>`
+      ).join('');
   }
   // Roster prints consecutive seat numbers from min to max; removed numbers in the
   // range keep their row with a blank name. Hidden entirely when no student has a name.
@@ -196,6 +216,20 @@ function printChart() {
   window.print();
   document.title=originalTitle;
 }
+function syncCadreTitlesInput() { $('cadreTitlesInput').value=cadreTitlesToText(state.cadreTitles); }
+function applyCadreTitles() {
+  const rows=parseCadreTitles($('cadreTitlesInput').value);
+  const titles=rows.flat().filter(Boolean);
+  // state.cadres is keyed by title, so duplicates would silently share one student.
+  const duplicate=titles.find((t,i)=>titles.indexOf(t)!==i);
+  if (duplicate) return showCadreTitlesMessage(`職稱「${duplicate}」重複，請改成不同名稱。`);
+  state.cadreTitles=rows;
+  save(); syncCadreTitlesInput(); showCadreTitlesMessage(`已套用 ${titles.length} 個職稱。`); render();
+}
+function resetCadreTitles() {
+  state.cadreTitles=cloneCadreTitles(DEFAULT_CADRE_TITLES);
+  save(); syncCadreTitlesInput(); showCadreTitlesMessage('已還原預設職稱。'); render();
+}
 const FLOATING_PANELS=[{panel:'setupPanel',button:'toggleSetup'},{panel:'rosterPanel',button:'toggleRoster'}];
 function closeAllPanels() {
   FLOATING_PANELS.forEach(({panel,button})=>{ $(panel).hidden=true; $(button).classList.remove('active'); $(button).setAttribute('aria-expanded','false'); });
@@ -207,6 +241,7 @@ function openPanel(panelId, buttonId) {
 }
 function togglePanel(panelId, buttonId) { if ($(panelId).hidden) openPanel(panelId, buttonId); else closeAllPanels(); }
 function bindMeta(id, key) { $(id).oninput=()=>{ state.meta[key]=$(id).value; save(); }; }
-load(); $('applyConfig').onclick=applyConfig; $('clearStudents').onclick=clearStudents; $('importRoster').onclick=importRoster; $('randomize').onclick=randomize; $('clearAll').onclick=clearAll; $('emptyMode').onclick=()=>{state.emptyMode=!state.emptyMode;state.selected=null;render();}; $('clearSelection').onclick=()=>{state.selected=null;state.emptyMode=false;render();}; $('exportJson').onclick=exportJSON; $('importJsonBtn').onclick=()=>$('importJsonFile').click(); $('importJsonFile').onchange=importJSONFile; $('printChart').onclick=printChart; $('toggleSetup').onclick=()=>togglePanel('setupPanel','toggleSetup'); $('toggleRoster').onclick=()=>togglePanel('rosterPanel','toggleRoster'); $('closeSetup').onclick=closeAllPanels; $('closeRoster').onclick=closeAllPanels; $('overlayBackdrop').onclick=closeAllPanels;
+load(); $('applyConfig').onclick=applyConfig; $('clearStudents').onclick=clearStudents; $('importRoster').onclick=importRoster; $('randomize').onclick=randomize; $('clearAll').onclick=clearAll; $('emptyMode').onclick=()=>{state.emptyMode=!state.emptyMode;state.selected=null;render();}; $('clearSelection').onclick=()=>{state.selected=null;state.emptyMode=false;render();}; $('exportJson').onclick=exportJSON; $('importJsonBtn').onclick=()=>$('importJsonFile').click(); $('importJsonFile').onchange=importJSONFile; $('printChart').onclick=printChart; $('toggleSetup').onclick=()=>togglePanel('setupPanel','toggleSetup'); $('toggleRoster').onclick=()=>togglePanel('rosterPanel','toggleRoster'); $('applyCadreTitles').onclick=applyCadreTitles; $('resetCadreTitles').onclick=resetCadreTitles; $('closeSetup').onclick=closeAllPanels; $('closeRoster').onclick=closeAllPanels; $('overlayBackdrop').onclick=closeAllPanels;
+syncCadreTitlesInput();
 bindMeta('metaSchool','school'); bindMeta('metaYear','year'); bindMeta('metaSemester','semester'); bindMeta('metaClass','className'); bindMeta('metaTeacher','teacher');
 render();

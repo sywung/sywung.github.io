@@ -55,6 +55,15 @@
       </div>
       <div class="setup-divider"></div>
       <h3 class="setup-subtitle">班級幹部（選填，從學生名單選擇，用於輸出 PDF／列印）</h3>
+      <div class="cadre-titles">
+        <label for="cadreTitlesInput">職稱設定（一行一列，用逗號分隔；列印時每一行會排成表格的一列）</label>
+        <textarea id="cadreTitlesInput" class="cadre-titles-input" rows="2" spellcheck="false"></textarea>
+        <div class="cadre-titles-actions">
+          <button id="applyCadreTitles" class="secondary" type="button">套用職稱</button>
+          <button id="resetCadreTitles" class="text-button" type="button">還原預設</button>
+          <span id="cadreTitlesMessage" class="message" role="status"></span>
+        </div>
+      </div>
       <div id="cadreFields" class="setup-cadres"></div>
     </section>
 
