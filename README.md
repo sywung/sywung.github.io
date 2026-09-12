@@ -79,6 +79,18 @@ Download:
 
 ---
 
+### 🖥️ Bezel – macOS Window Manager & Display Control
+
+A macOS window management tool with cursor movement and external display control features, including brightness, contrast, volume, and input source switching.
+
+Website:
+https://bezel.app.twater.cc/
+
+Download:
+https://github.com/sywung/bezel-releases/releases/latest
+
+---
+
 ## 🧠 Teaching Philosophy
 
 Engineering education should emphasize:
