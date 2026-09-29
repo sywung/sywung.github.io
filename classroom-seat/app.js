@@ -127,6 +127,13 @@ function clearStudents() {
   state.students=[]; state.seats=Array(state.rows*state.columns).fill(null); state.fixed=[]; state.empty=[]; state.cadres={}; state.selected=null;
   save(); showSetupMessage('已清除全部學生資料。'); render();
 }
+function clearLocalData() {
+  if (!confirm('將刪除這台裝置瀏覽器中保存的全部資料：學生名單、座位安排、保存紀錄、列印資訊與幹部職稱，回到初始狀態。\n\n刪除後無法復原；需要保留的話，請先按「匯出完整資料」。確定要清除嗎？')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  state=JSON.parse(INITIAL_STATE);
+  $('rosterInput').value=''; syncCadreTitlesInput(); showSetupMessage(''); showRosterMessage(''); showCadreTitlesMessage('');
+  showMessage('已清除這台裝置的全部資料。'); render();
+}
 function renderHistory(){ const box=$('history'); if(!state.history.length){box.className='history-empty';box.textContent='產生座位表後，結果會保存在這台裝置的瀏覽器。';return;} box.className=''; box.innerHTML=state.history.map((h,i)=>`<div class="history-item"><span>${h.date}</span><span>${h.seats.filter(Boolean).length} 人、${h.empty.length} 個空位${i===0?'（目前）':''}</span></div>`).join(''); }
 function exportJSON(){
   const data={...state, selected:null, emptyMode:false};
@@ -230,7 +237,7 @@ function resetCadreTitles() {
   state.cadreTitles=cloneCadreTitles(DEFAULT_CADRE_TITLES);
   save(); syncCadreTitlesInput(); showCadreTitlesMessage('已還原預設職稱。'); render();
 }
-const FLOATING_PANELS=[{panel:'setupPanel',button:'toggleSetup'},{panel:'rosterPanel',button:'toggleRoster'}];
+const FLOATING_PANELS=[{panel:'setupPanel',button:'toggleSetup'},{panel:'rosterPanel',button:'toggleRoster'},{panel:'helpPanel',button:'toggleHelp'}];
 function closeAllPanels() {
   FLOATING_PANELS.forEach(({panel,button})=>{ $(panel).hidden=true; $(button).classList.remove('active'); $(button).setAttribute('aria-expanded','false'); });
   $('overlayBackdrop').hidden=true;
@@ -241,7 +248,8 @@ function openPanel(panelId, buttonId) {
 }
 function togglePanel(panelId, buttonId) { if ($(panelId).hidden) openPanel(panelId, buttonId); else closeAllPanels(); }
 function bindMeta(id, key) { $(id).oninput=()=>{ state.meta[key]=$(id).value; save(); }; }
-load(); $('applyConfig').onclick=applyConfig; $('clearStudents').onclick=clearStudents; $('importRoster').onclick=importRoster; $('randomize').onclick=randomize; $('clearAll').onclick=clearAll; $('emptyMode').onclick=()=>{state.emptyMode=!state.emptyMode;state.selected=null;render();}; $('clearSelection').onclick=()=>{state.selected=null;state.emptyMode=false;render();}; $('exportJson').onclick=exportJSON; $('importJsonBtn').onclick=()=>$('importJsonFile').click(); $('importJsonFile').onchange=importJSONFile; $('printChart').onclick=printChart; $('toggleSetup').onclick=()=>togglePanel('setupPanel','toggleSetup'); $('toggleRoster').onclick=()=>togglePanel('rosterPanel','toggleRoster'); $('applyCadreTitles').onclick=applyCadreTitles; $('resetCadreTitles').onclick=resetCadreTitles; $('closeSetup').onclick=closeAllPanels; $('closeRoster').onclick=closeAllPanels; $('overlayBackdrop').onclick=closeAllPanels;
+const INITIAL_STATE=JSON.stringify(state);
+load(); $('clearLocalData').onclick=clearLocalData; $('toggleHelp').onclick=()=>togglePanel('helpPanel','toggleHelp'); $('closeHelp').onclick=closeAllPanels; $('applyConfig').onclick=applyConfig; $('clearStudents').onclick=clearStudents; $('importRoster').onclick=importRoster; $('randomize').onclick=randomize; $('clearAll').onclick=clearAll; $('emptyMode').onclick=()=>{state.emptyMode=!state.emptyMode;state.selected=null;render();}; $('clearSelection').onclick=()=>{state.selected=null;state.emptyMode=false;render();}; $('exportJson').onclick=exportJSON; $('importJsonBtn').onclick=()=>$('importJsonFile').click(); $('importJsonFile').onchange=importJSONFile; $('printChart').onclick=printChart; $('toggleSetup').onclick=()=>togglePanel('setupPanel','toggleSetup'); $('toggleRoster').onclick=()=>togglePanel('rosterPanel','toggleRoster'); $('applyCadreTitles').onclick=applyCadreTitles; $('resetCadreTitles').onclick=resetCadreTitles; $('closeSetup').onclick=closeAllPanels; $('closeRoster').onclick=closeAllPanels; $('overlayBackdrop').onclick=closeAllPanels;
 syncCadreTitlesInput();
 bindMeta('metaSchool','school'); bindMeta('metaYear','year'); bindMeta('metaSemester','semester'); bindMeta('metaClass','className'); bindMeta('metaTeacher','teacher');
 render();

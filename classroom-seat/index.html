@@ -23,7 +23,10 @@
         <h1>教室座位抽籤</h1>
         <p class="subtitle">指定部分座位，其餘座號隨機安排</p>
       </div>
-      <div id="savedAt" class="saved-at">尚未產生座位表</div>
+      <div class="header-side">
+        <div id="savedAt" class="saved-at">尚未產生座位表</div>
+        <button id="toggleHelp" class="secondary help-button" type="button" aria-expanded="false" aria-controls="helpPanel">? 使用說明</button>
+      </div>
     </header>
 
     <div id="overlayBackdrop" class="overlay-backdrop" hidden></div>
@@ -65,6 +68,40 @@
         </div>
       </div>
       <div id="cadreFields" class="setup-cadres"></div>
+    </section>
+
+    <section class="panel floating-panel help-panel" id="helpPanel" hidden aria-labelledby="helpTitle">
+      <div class="panel-title">
+        <h2 id="helpTitle">使用說明</h2>
+        <button id="closeHelp" class="icon-button" type="button" title="關閉">✕</button>
+      </div>
+      <h3 class="help-heading">建議設定順序</h3>
+      <ol class="help-steps">
+        <li><b>⚙ 座位設定排數與每排座位數</b>：「排數」是直的排（左右幾排），「每排座位數」是每排前後幾個位子。</li>
+        <li><b>建立學生名單</b>（二選一）：
+          <ul>
+            <li>按學生名單右上角「＋」，貼上「座號 姓名」（可直接從 Excel 複製），按「建立學生名單」。</li>
+            <li>或在 ⚙ 填「開始號碼」與「學生人數」，按「產生座號」（只有座號、沒有姓名）。</li>
+          </ul>
+        </li>
+        <li><b>移除不在班上的座號</b>：點座號旁的 ×。</li>
+        <li><b>設定空位</b>：按「設定空位」，再點不排人的座位（例如壞掉的桌椅）；再按一次結束。</li>
+        <li><b>指定座位</b>（選用）：先點左側座號，再點座位。指定的座位有黃色框，重新抽選時不會被換掉。</li>
+        <li><b>重新抽選</b>：其餘座號隨機填入。之後可以拖曳座位互換。</li>
+        <li><b>列印資訊與班級幹部</b>（選用）：在 ⚙ 填學校、學年度、班級、導師，並選擇幹部。</li>
+        <li><b>列印／輸出 PDF</b>：在列印視窗選「另存為 PDF」即可存檔；紙張為 A4 直式。</li>
+      </ol>
+      <h3 class="help-heading">注意事項</h3>
+      <ul class="help-notes">
+        <li><b>排數、座位數要先定好。</b>之後再按「產生座號」會清空目前的座位安排、指定座位和空位（姓名會保留）。</li>
+        <li><b>匯入學生名單會取代</b>目前的座號清單與座位安排，請在指定座位之前匯入。</li>
+        <li>沒有選座號時<b>點一下已排好的座位，會把那位學生移出座位</b>（並取消指定）；誤點可再按「重新抽選」或重新指定。</li>
+        <li>空位上不能有學生：要設為空位的座位，請先把學生移出。</li>
+        <li>資料<b>只存在這台裝置的這個瀏覽器</b>，換電腦、換瀏覽器或清除瀏覽資料就看不到。要搬到別台或備份，請用「匯出完整資料」存成檔案，再到另一台「匯入完整資料」。</li>
+        <li>「本機保存紀錄」只保留最近 20 次抽選的時間與人數。</li>
+        <li><b>在公用電腦或教室電視上使用完</b>，建議按「清除本機紀錄」，把學生姓名等資料從這台裝置刪除。</li>
+        <li>自訂的幹部職稱會一直保留；要改回預設，請按「還原預設」。</li>
+      </ul>
     </section>
 
     <section class="panel roster-panel floating-panel" id="rosterPanel" hidden>
@@ -125,10 +162,19 @@
           <button id="exportJson" class="secondary">匯出完整資料</button>
           <button id="importJsonBtn" class="secondary">匯入完整資料</button>
           <input id="importJsonFile" type="file" accept="application/json" hidden>
+          <button id="clearLocalData" class="danger">清除本機紀錄</button>
         </div>
       </div>
       <div id="history" class="history-empty">產生座位表後，結果會保存在這台裝置的瀏覽器。</div>
     </section>
+
+    <footer class="donate-footer">
+      <img class="donate-qr" src="https://donate.twater.cc/qr.svg?source=classsites" width="112" height="112" loading="lazy" alt="贊助頁面 QR Code">
+      <div class="donate-text">
+        <p>覺得好用嗎？歡迎用手機掃描 QR Code，或點按鈕贊助支持。</p>
+        <a href="https://donate.twater.cc/r/classsites" target="_blank" rel="noopener" style="display:inline-block;padding:.7em 1.3em;background:#f5d76e;color:#141428;font-weight:700;text-decoration:none;border-radius:2px">♡ 贊助支持</a>
+      </div>
+    </footer>
   </main>
 
   <div id="printView" class="print-view">
