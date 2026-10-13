@@ -91,6 +91,18 @@ https://github.com/sywung/bezel-releases/releases/latest
 
 ---
 
+### 🔧 kicad-partfetch – KiCad Part Fetcher
+
+An open-source desktop tool (macOS / Windows) and CLI that fetches a part's symbol, footprint and 3D model from LCSC / EasyEDA, the EasyEDA community library or GitHub, and merges them into a KiCad library.
+
+Source:
+https://github.com/sywung/kicad-partfetch
+
+Download:
+https://github.com/sywung/kicad-partfetch/releases/latest
+
+---
+
 ## 🧠 Teaching Philosophy
 
 Engineering education should emphasize:
