@@ -103,6 +103,18 @@ https://github.com/sywung/kicad-partfetch/releases/latest
 
 ---
 
+### 🔮 ziwei-doushu – Zi Wei Dou Shu Chart (self-hosted)
+
+A self-hosted fork of the open-source Zi Wei Dou Shu charting engine (Renhuai123/ziwei-doushu), adding the backend and features: 13-palace readings from a 675k-chart dataset, full time-layer luck cycles, chart twins with a same-chart clock table, AI Q&A and compatibility analysis, school-variant switching, lunar-date input, and Taiwan true-solar-time / historical DST handling.
+
+Source:
+https://github.com/sywung/ziwei-doushu
+
+Donate:
+https://donate.twater.cc/r/ziwei
+
+---
+
 ## 🧠 Teaching Philosophy
 
 Engineering education should emphasize:
