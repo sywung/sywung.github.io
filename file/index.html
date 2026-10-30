@@ -46,6 +46,15 @@ a:hover {
   color: #94a3b8;
   font-size: 14px;
 }
+.version {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+.notes {
+  margin: 12px 0 0;
+  padding-left: 20px;
+}
 </style>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZS31KPH66P"></script>
@@ -62,6 +71,13 @@ a:hover {
   <h1>Classroom Timer APK Download</h1>
   <p class="muted">請依裝置架構下載對應版本。</p>
 
+  <div class="card" id="release" hidden>
+    <h2>最新版本</h2>
+    <p class="version" id="release-version"></p>
+    <p class="muted" id="release-date"></p>
+    <ul class="notes" id="release-notes"></ul>
+  </div>
+
   <div class="card">
     <h2>arm32 / armeabi-v7a</h2>
     <p>
@@ -76,5 +92,28 @@ a:hover {
     </p>
   </div>
 </div>
+<script>
+// 版本資訊由 build.sh 產生（classroom-timer-tv.json），與 APK 一起發佈
+fetch("./classroom-timer-tv.json?t=" + Date.now())
+  .then(function (res) { return res.ok ? res.json() : Promise.reject(res.status); })
+  .then(function (info) {
+    var b = String(info.build || "");
+    document.getElementById("release-version").textContent =
+      "v" + (info.version || "?");
+    if (/^\d{12}$/.test(b)) {
+      document.getElementById("release-date").textContent =
+        "發佈於 " + b.slice(0, 4) + "-" + b.slice(4, 6) + "-" + b.slice(6, 8) +
+        " " + b.slice(8, 10) + ":" + b.slice(10, 12) + "（build " + b + "）";
+    }
+    var list = document.getElementById("release-notes");
+    (info.notes || []).forEach(function (note) {
+      var li = document.createElement("li");
+      li.textContent = note;
+      list.appendChild(li);
+    });
+    document.getElementById("release").hidden = false;
+  })
+  .catch(function () { /* 讀不到版本資訊時只顯示下載連結 */ });
+</script>
 </body>
 </html>
